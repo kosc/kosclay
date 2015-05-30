@@ -1,16 +1,24 @@
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/net-irc/znc/znc-1.4-r1.ebuild,v 1.2 2014/11/28 13:47:58 pacho Exp $
+# $Header: /var/cvsroot/gentoo-x86/net-irc/znc/znc-1.4.ebuild,v 1.2 2014/07/12 10:24:23 wired Exp $
 
 EAPI=5
 
-PYTHON_COMPAT=( python{3_2,3_3,3_4} )
-inherit base python-single-r1 systemd user
+PYTHON_COMPAT=( python{3_2,3_3} )
+inherit base python-single-r1 user
 
+MY_PV=${PV/_/-}
 DESCRIPTION="An advanced IRC Bouncer"
 
-SRC_URI="http://znc.in/releases/$PN-$PV.tar.gz"
-KEYWORDS="~amd64 ~arm ~x86"
+if [[ ${PV} == *9999* ]]; then
+	inherit git-2
+	EGIT_REPO_URI=${EGIT_REPO_URI:-"git://github.com/znc/znc.git"}
+	SRC_URI=""
+	KEYWORDS=""
+else
+	SRC_URI="http://znc.in/releases/${PN}-${MY_PV}.tar.gz"
+	KEYWORDS="~amd64 ~arm ~x86"
+fi
 
 HOMEPAGE="http://znc.in"
 LICENSE="GPL-2"
@@ -37,8 +45,10 @@ DEPEND="
 	${RDEPEND}
 "
 
+S=${WORKDIR}/${PN}-${MY_PV}
+
 PATCHES=(
-	"${FILESDIR}/${PN}-1.0-systemwideconfig.patch"
+	"${FILESDIR}/${PN}-${MY_PV}-systemwideconfig.patch"
 )
 
 CONFDIR="/var/lib/znc"
@@ -54,12 +64,15 @@ pkg_setup() {
 }
 
 src_prepare() {
+	if [[ ${PV} == *9999* ]]; then
+		./autogen.sh
+	fi
+
 	base_src_prepare
 }
 
 src_configure() {
 	econf \
-		--with-systemdsystemunitdir=$(systemd_get_unitdir) \
 		$(use_enable debug) \
 		$(use_enable ipv6) \
 		$(use_enable perl) \
